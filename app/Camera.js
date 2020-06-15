@@ -2,18 +2,34 @@ import React, { PureComponent } from 'react';
 import { AppRegistry, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { RNCamera } from 'react-native-camera';
 import RNTextDetector from "react-native-text-detector";
+import { utils } from '@react-native-firebase/app';
+import vision from '@react-native-firebase/ml-vision';
 
 const Camera = ({ navigation }) => {
-
   const takePicture = async () => {
     if (camera) {
-      const options = { quality: 0.9, base64: true };
+      const options = { base64: true };
       const { uri } = await camera.takePictureAsync(options);
-      console.log(uri);
+      console.log('uri: ', uri);
       const visionResp = await RNTextDetector.detectFromUri(uri);
-      console.log('visionResp', visionResp);
+
+      const text = visionResp.reduce((array, obj) => {
+        array.push(obj.text);
+        return array;
+      }, []);
+      console.log('RNTextDetector text: ', text);
+
+      const processed = await vision().cloudDocumentTextRecognizerProcessImage(uri);
+      console.log('MLVision: ');
+      console.log('Found text in document: ', processed.text);
+
+      processed.blocks.forEach(block => {
+        console.log('Found block with text: ', block.text);
+        console.log('Confidence in block: ', block.confidence);
+        console.log('Languages found in block: ', block.recognizedLanguages);
+      });
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
